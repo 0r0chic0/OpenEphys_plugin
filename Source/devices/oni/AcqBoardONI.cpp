@@ -429,7 +429,7 @@ bool AcqBoardONI::initializeBoardInThread()
     //  - disables all DACs and sets gain to 0
     LOGDD ("DBG: 1");
 
-    setSampleRate (30000);
+    setSampleRate (30000, false);
 
     LOGDD ("DBG: A");
     evalBoard->setCableLengthMeters (Rhd2000ONIBoard::PortA, settings.cableLength.portA);
@@ -1022,7 +1022,7 @@ void AcqBoardONI::scanPortsInThread()
 
     float currentSampleRate = settings.boardSampleRate;
 
-    setSampleRate (30000); // set to 30 kHz temporarily
+    setSampleRate (30000, false); // set to 30 kHz temporarily
 
     LOGDD ("DBG: SC");
     // Enable all data streams, and set sources to cover one or two chips
