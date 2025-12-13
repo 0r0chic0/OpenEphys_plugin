@@ -429,8 +429,7 @@ bool AcqBoardONI::initializeBoardInThread()
     //  - disables all DACs and sets gain to 0
     LOGDD ("DBG: 1");
 
-    checkCableDelays = false;
-    setSampleRate (30000);
+    setSampleRate (30000, false);
 
     LOGDD ("DBG: A");
     evalBoard->setCableLengthMeters (Rhd2000ONIBoard::PortA, settings.cableLength.portA);
@@ -521,7 +520,12 @@ Array<int> AcqBoardONI::getAvailableSampleRates()
     return sampleRates;
 }
 
-void AcqBoardONI::setSampleRate (int desiredSampleRate)
+void AcqBoardONI::setSampleRate(int desiredSampleRate)
+{
+    setSampleRate (desiredSampleRate, true);
+}
+
+void AcqBoardONI::setSampleRate (int desiredSampleRate, bool reScanDelays)
 {
     Rhd2000ONIBoard::AmplifierSampleRate sampleRate;
 
@@ -614,7 +618,7 @@ void AcqBoardONI::setSampleRate (int desiredSampleRate)
     }
     LOGD ("Sample rate set to ", evalBoard->getSampleRate());
 
-    if (checkCableDelays)
+    if (reScanDelays)
     {
         checkAllCableDelays();
     }
@@ -1018,8 +1022,7 @@ void AcqBoardONI::scanPortsInThread()
 
     float currentSampleRate = settings.boardSampleRate;
 
-    checkCableDelays = false;
-    setSampleRate (30000); // set to 30 kHz temporarily
+    setSampleRate (30000, false); // set to 30 kHz temporarily
 
     LOGDD ("DBG: SC");
     // Enable all data streams, and set sources to cover one or two chips
@@ -1225,8 +1228,7 @@ void AcqBoardONI::scanPortsInThread()
     LOGD ("Set optimum delay for port C: ", settings.optimumDelay.portC);
     LOGD ("Set optimum delay for port D: ", settings.optimumDelay.portD);
 
-    checkCableDelays = ! initialScan;
-    setSampleRate (currentSampleRate); // restore saved sample rate and check delays
+    setSampleRate (currentSampleRate, !initialScan); // restore saved sample rate and check delays
 
     initialScan = false;
 }

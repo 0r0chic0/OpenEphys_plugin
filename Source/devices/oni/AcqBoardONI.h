@@ -126,7 +126,7 @@ public:
     Array<int> getAvailableSampleRates();
 
     /** Set sample rate */
-    void setSampleRate (int sampleRateHz);
+    void setSampleRate (int sampleRateHz) override;
 
     /** Get current sample rate */
     float getSampleRate() const;
@@ -245,6 +245,9 @@ public:
     bool getMemoryMonitorSupport() const;
 
 private:
+    /** Sets sample rate and updates delays*/
+    void setSampleRate (int sampleRateHz, bool reScanDelays);
+
     /**Check board memory status */
     bool checkBoardMem() const;
 
@@ -325,9 +328,6 @@ private:
 
     /** Lock for interacting with board */
     CriticalSection oniLock;
-
-    /** Re-check cable delays after changing sample rate*/
-    bool checkCableDelays = false;
 
     /** Hold the current device ID.Used to determine which version of the acquisition board this is */
     int deviceId = 0;
