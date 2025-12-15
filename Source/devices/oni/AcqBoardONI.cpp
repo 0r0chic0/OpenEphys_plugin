@@ -27,6 +27,8 @@
 #include <string>
 
 #define INIT_STEP 64
+//#define DEBUG_EMULATE_HEADSTAGES 8
+//#define DEBUG_EMULATE_64CH
 
 AcqBoardONI::AcqBoardONI() : AcquisitionBoard(),
                              chipRegisters (30000.0f)
@@ -899,6 +901,7 @@ int AcqBoardONI::getIntanChipId (
     // This is just used to verify that we are getting good data over the SPI
     // communication channel.
     intanChipPresent = ((char) dataBlock->auxiliaryData[stream][2][32] == 'I' && (char) dataBlock->auxiliaryData[stream][2][33] == 'N' && (char) dataBlock->auxiliaryData[stream][2][34] == 'T' && (char) dataBlock->auxiliaryData[stream][2][35] == 'A' && (char) dataBlock->auxiliaryData[stream][2][36] == 'N' && (char) dataBlock->auxiliaryData[stream][2][24] == 'R' && (char) dataBlock->auxiliaryData[stream][2][25] == 'H' && (char) dataBlock->auxiliaryData[stream][2][26] == 'D');
+    //std::cout << (char) dataBlock->auxiliaryData[stream][2][32] << "-" << (char) dataBlock->auxiliaryData[stream][2][33] << "-" << (char) dataBlock->auxiliaryData[stream][2][34] << std::endl;
 
     // If the SPI communication is bad, return -1.  Otherwise, return the Intan
     // chip ID number stored in ROM register 63.
@@ -936,7 +939,6 @@ void AcqBoardONI::scanPortsInThread()
     if (! checkBoardMem())
         return;
     LOGDD ("DBG: SA");
-
     if (hasI2cSupport)
     {
         bool enableI2c[NUMBER_OF_PORTS] = { true, true, true, true };
@@ -1104,7 +1106,7 @@ void AcqBoardONI::scanPortsInThread()
         {
             id = getIntanChipId (dataBlock.get(), hs, register59Value);
 
-            //     LOGD("hs ", hs, " id ", id, " r59 ", (int)register59Value);
+                // LOGD("hs ", hs, " id ", id, " r59 ", (int)register59Value);
 
             if (id == CHIP_ID_RHD2132 || id == CHIP_ID_RHD2216 || (id == CHIP_ID_RHD2164 && register59Value == REGISTER_59_MISO_A))
             {
@@ -1322,6 +1324,7 @@ void AcqBoardONI::updateBoardStreams()
             evalBoard->enableDataStream (i, false);
         }
     }
+    evalBoard->updateStreamBlockSize();
 }
 
 bool AcqBoardONI::isHeadstageEnabled (int hsNum) const
@@ -1719,6 +1722,8 @@ void AcqBoardONI::run()
             {
                 LOGE ("Error reading ONI frame: ", oni_error_str (res), " code ", res);
                 signalThreadShouldExit();
+                oni_destroy_frame (frame);
+                continue;
             }
             if (frame->dev_idx == Rhd2000ONIBoard::DEVICE_RHYTHM)
             {

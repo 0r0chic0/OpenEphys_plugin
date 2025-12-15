@@ -1408,3 +1408,23 @@ void Rhd2000ONIBoard::setBnoAxisMap (const uint32_t port, int axisMap)
 
     oni_write_reg (ctx, device, (uint32_t) BnoRegisters::AXIS_MAP, axisMap);
 }
+
+
+void Rhd2000ONIBoard::debug_printDevTable() const
+{
+    oni_size_t tableSize;
+    size_t optSize = sizeof (tableSize);
+    oni_get_opt (ctx, ONI_OPT_NUMDEVICES, &tableSize, &optSize);
+    optSize = sizeof (oni_device_t) * tableSize;
+    oni_device_t* devs = (oni_device_t*)malloc(optSize);
+    if (devs == NULL)
+        return;
+
+    oni_get_opt (ctx, ONI_OPT_DEVICETABLE, devs, &optSize);
+    for (int i = 0; i < tableSize; i++)
+    {
+        printf ("N: %d Idx %x Id %x Ver: %x Rd %x Wr %x\n", i, devs[i].idx, devs[i].id, devs[i].version, devs[i].read_size, devs[i].write_size);
+    }
+
+    free (devs);
+}

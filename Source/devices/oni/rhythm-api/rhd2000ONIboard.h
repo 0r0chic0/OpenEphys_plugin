@@ -179,6 +179,8 @@ public:
 
     uint32_t getDeviceIdOnEeprom (const uint32_t);
 
+    void debug_printDevTable() const;
+
     enum BoardMemState
     {
         BOARDMEM_INIT = 0,
