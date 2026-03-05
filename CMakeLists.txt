@@ -45,7 +45,7 @@ list(APPEND CMAKE_PREFIX_PATH ${GUI_COMMONLIB_DIR} ${GUI_COMMONLIB_DIR}/${CONFIG
 if (APPLE)
 	add_library(${PLUGIN_NAME} MODULE ${SRC_FILES})
 else()
-	add_library(${PLUGIN_NAME} SHARED ${SRC_FILES})
+	add_library(${PLUGIN_NAME} SHARED ${SRC_FILES} "Source/devices/redpitaya/AcqBoardRedPitaya.cpp")
 endif()
 
 target_compile_features(${PLUGIN_NAME} PUBLIC cxx_auto_type cxx_generalized_initializers)

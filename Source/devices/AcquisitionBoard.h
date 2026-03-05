@@ -213,7 +213,8 @@ public:
         None = 0,
         Simulated = 1,
         OpalKelly = 2,
-        ONI = 3
+        ONI = 3,
+        RedPitaya = 4
     };
 
     BoardType getBoardType() const { return boardType; }

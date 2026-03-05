@@ -25,6 +25,8 @@ add_sources(${PLUGIN_NAME}
 	devices/oni/AcqBoardONI.cpp
 	devices/opalkelly/AcqBoardOpalKelly.h
 	devices/opalkelly/AcqBoardOpalKelly.cpp
+	devices/redpitaya/AcqBoardRedPitaya.h
+	devices/redpitaya/AcqBoardRedPitaya.cpp
 	devices/simulated/AcqBoardSim.h
 	devices/simulated/AcqBoardSim.cpp
 	devices/Headstage.h

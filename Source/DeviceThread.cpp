@@ -26,6 +26,7 @@
 
 #include "devices/oni/AcqBoardONI.h"
 #include "devices/opalkelly/AcqBoardOpalKelly.h"
+#include "devices/redpitaya/AcqBoardRedPitaya.h"
 #include "devices/simulated/AcqBoardSim.h"
 
 /** Set to true to test simulation mode with boards connected */
@@ -97,6 +98,17 @@ AcquisitionBoard* DeviceThread::detectBoard()
     else
     {
         oniBoard.reset();
+    }
+
+    std::unique_ptr<AcqBoardRedPitaya> redPitayaBoard = std::make_unique<AcqBoardRedPitaya>();
+
+    if (redPitayaBoard->detectBoard())
+    {
+        return redPitayaBoard.release();
+    }
+    else
+    {
+        redPitayaBoard.reset();
     }
 
     bool response = AlertWindow::showOkCancelBox (AlertWindow::NoIcon,
