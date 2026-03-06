@@ -27,11 +27,33 @@ AcqBoardRedPitaya::~AcqBoardRedPitaya()
 
 bool AcqBoardRedPitaya::detectBoard()
 {
-    // For now, assume that a Red Pitaya is available whenever this
-    // board type is compiled in. Network reachability checks can be
-    // added here if desired.
-    deviceFound = true;
-    return true;
+    std::cout << "detectBoard called" << std::endl;
+
+    deviceFound = false;
+
+    StreamingSocket socket;
+
+    if (! socket.connect ("192.168.137.219", 5000, 1000))
+    {
+        std::cout << "connect failed" << std::endl;
+        return false;
+    }
+
+    std::cout << "connected" << std::endl;
+
+    socket.write ("REDPITAYA\n", 9);
+
+    char buffer[16] = { 0 };
+    int n = socket.read (buffer, sizeof (buffer) - 1, true);
+
+    std::cout << "read bytes: " << n << std::endl;
+
+    if (n > 0 && String (buffer).trim() == "OK")
+        deviceFound = true;
+
+    socket.close();
+
+    return deviceFound;
 }
 
 bool AcqBoardRedPitaya::initializeBoard()
