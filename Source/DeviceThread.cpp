@@ -238,9 +238,10 @@ void DeviceThread::updateSettings (OwnedArray<ContinuousChannel>* continuousChan
 
         if (acquisitionBoard->areAdcChannelsEnabled())
         {
-            for (int ch = 0; ch < 8; ch++)
+            const int numadcchannels = acquisitionBoard->getNumDataOutputs (ContinuousChannel::ADC);
+            for (int ch = 0; ch < numadcchannels; ch++)
             {
-                String name = "ADC" + String (ch + 1);
+                String name = "Channel" + String (ch + 1);
 
                 ContinuousChannel::Settings channelSettings {
                     ContinuousChannel::ADC,
@@ -254,7 +255,7 @@ void DeviceThread::updateSettings (OwnedArray<ContinuousChannel>* continuousChan
                 };
 
                 continuousChannels->add (new ContinuousChannel (channelSettings));
-                continuousChannels->getLast()->setUnits ("V");
+                continuousChannels->getLast()->setUnits ("");
             }
         }
 

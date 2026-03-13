@@ -7,6 +7,7 @@
 */
 
 #include "AcqBoardRedPitaya.h"
+#include <cstring>
 
 AcqBoardRedPitaya::AcqBoardRedPitaya()
     : AcquisitionBoard()
@@ -23,6 +24,7 @@ AcqBoardRedPitaya::AcqBoardRedPitaya()
 
 AcqBoardRedPitaya::~AcqBoardRedPitaya()
 {
+    stopAcquisition();
 }
 
 bool AcqBoardRedPitaya::detectBoard()
@@ -30,10 +32,9 @@ bool AcqBoardRedPitaya::detectBoard()
     std::cout << "detectBoard called" << std::endl;
 
     deviceFound = false;
-
     StreamingSocket socket;
 
-    if (! socket.connect ("192.168.137.219", 5000, 1000))
+    if (! socket.connect ("rp-f0cd35.local", 5000, 500))
     {
         std::cout << "connect failed" << std::endl;
         return false;
@@ -41,10 +42,18 @@ bool AcqBoardRedPitaya::detectBoard()
 
     std::cout << "connected" << std::endl;
 
-    socket.write ("REDPITAYA\n", 9);
+    const char* msg = "REDPITAYA\n";
+    socket.write (msg, (int) strlen (msg));
+
+    if (! socket.waitUntilReady (true, 500))
+    {
+        std::cout << "no reply" << std::endl;
+        socket.close();
+        return false;
+    }
 
     char buffer[16] = { 0 };
-    int n = socket.read (buffer, sizeof (buffer) - 1, true);
+    int n = socket.read (buffer, sizeof (buffer) - 1, false);
 
     std::cout << "read bytes: " << n << std::endl;
 
@@ -52,7 +61,6 @@ bool AcqBoardRedPitaya::detectBoard()
         deviceFound = true;
 
     socket.close();
-
     return deviceFound;
 }
 
@@ -168,18 +176,34 @@ bool AcqBoardRedPitaya::startAcquisition()
     if (! deviceFound)
         return false;
 
-    startThread();
+    if (commandSocket == nullptr)
+        commandSocket = new StreamingSocket();
 
+    if (! commandSocket->connect ("rp-f0cd35.local", 5000, 1000))
+        return false;
+
+    const char* msg = "START\n";
+    commandSocket->write (msg, (int) strlen (msg));
+
+    startThread();
     return true;
 }
 
 bool AcqBoardRedPitaya::stopAcquisition()
 {
+    if (commandSocket != nullptr)
+    {
+        const char* msg = "STOP\n";
+        commandSocket->write (msg, (int) strlen (msg));
+        commandSocket->close();
+        delete commandSocket;
+        commandSocket = nullptr;
+    }
+
     if (isThreadRunning())
         signalThreadShouldExit();
 
     buffer->clear();
-
     return true;
 }
 
@@ -277,7 +301,7 @@ int AcqBoardRedPitaya::getNumDataOutputs (ContinuousChannel::Type channelType)
     if (channelType == ContinuousChannel::ADC)
     {
         if (acquireAdc)
-            return 8; // The DeviceThread assumes up to 8 ADC channels.
+            return 6; // The DeviceThread assumes up to 6 ADC channels.
 
         return 0;
     }
@@ -291,13 +315,12 @@ void AcqBoardRedPitaya::setNumHeadstageChannels (int /*headstageIndex*/, int /*c
 
 void AcqBoardRedPitaya::run()
 {
+    if (commandSocket == nullptr)
+        return;
+
     int64 sampleNumber = 0;
     const int64 samplesPerBuffer = int64 (settings.boardSampleRate / 1000.0);
-    const int64 uSecPerBuffer = (samplesPerBuffer / settings.boardSampleRate) * 1e6;
     uint64 eventCode = 0;
-
-    int64 start = Time::getHighResolutionTicks();
-    int64 bufferCount = 0;
 
     const int numHeadstageChannels = getNumDataOutputs (ContinuousChannel::ELECTRODE);
     const int numAuxChannels = getNumDataOutputs (ContinuousChannel::AUX);
@@ -308,21 +331,35 @@ void AcqBoardRedPitaya::run()
     if (totalChannels <= 0 || samplesPerBuffer <= 0)
         return;
 
+    constexpr int headerSize = 22;
+    constexpr int payloadSize = 6 * 2; // 6 int16 channels
+    constexpr int packetSize = headerSize + payloadSize;
+
+    uint8_t packet[packetSize];
+
     while (! threadShouldExit())
     {
-        bufferCount++;
-
         for (int sampleIndex = 0; sampleIndex < samplesPerBuffer; ++sampleIndex)
         {
+            int bytesRead = 0;
+
+            while (bytesRead < packetSize && ! threadShouldExit())
+            {
+                const int n = commandSocket->read (packet + bytesRead, packetSize - bytesRead, true);
+
+                if (n <= 0)
+                    return;
+
+                bytesRead += n;
+            }
+
+            const int16_t* channels = reinterpret_cast<const int16_t*> (packet + headerSize);
+
             int ch = 0;
 
-            // There are no electrode or AUX channels for Red Pitaya in this skeleton.
-
-            // Fill ADC channels with zeros for now; this is where
-            // UDP or other network samples can be injected.
             for (int adc = 0; adc < numAdcChannelsLocal; ++adc)
             {
-                samples[(ch * samplesPerBuffer) + sampleIndex] = 0.0f;
+                samples[(ch * samplesPerBuffer) + sampleIndex] = float (channels[adc]);
                 ++ch;
             }
 
@@ -340,12 +377,5 @@ void AcqBoardRedPitaya::run()
                              timestamps,
                              event_codes,
                              (int) samplesPerBuffer);
-
-        const int64 uSecElapsed = int64 (Time::highResolutionTicksToSeconds (Time::getHighResolutionTicks() - start) * 1e6);
-
-        if (uSecElapsed < (uSecPerBuffer * bufferCount))
-        {
-            std::this_thread::sleep_for (std::chrono::microseconds ((uSecPerBuffer * bufferCount) - uSecElapsed));
-        }
     }
 }

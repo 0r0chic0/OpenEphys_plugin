@@ -189,6 +189,8 @@ private:
     /** BitVolts scaling for ADC channels */
     float adcBitVolts = 1.0f;
 
+    StreamingSocket* commandSocket = nullptr;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AcqBoardRedPitaya);
 };
 
