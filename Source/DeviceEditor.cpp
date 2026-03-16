@@ -87,14 +87,24 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
         addAndMakeVisible (hsOptions);
         hsOptions->setBounds (xOffset + 3, 28 + i * 20, 70, 18);
     }
+    //add record button 
+    recordButton = std::make_unique<UtilityButton> ("RECORD");
+    recordButton->setRadius (3.0f);
+    recordButton->setBounds (xOffset + 6, 108, 65, 18);
+    recordButton->addListener (this);
+    recordButton->setClickingTogglesState (true);
+    recordButton->setTooltip ("Record streaming data");
+    addAndMakeVisible (recordButton.get());
 
     // add rescan button
+    /*
     rescanButton = std::make_unique<UtilityButton> ("RESCAN");
     rescanButton->setRadius (3.0f);
     rescanButton->setBounds (xOffset + 6, 108, 65, 18);
     rescanButton->addListener (this);
     rescanButton->setTooltip ("Check for connected headstages");
     addAndMakeVisible (rescanButton.get());
+    */
 
     // add sample rate selection
     sampleRateInterface = std::make_unique<SampleRateInterface> (board, this);
@@ -354,6 +364,13 @@ void DeviceEditor::buttonClicked (Button* button)
                                                               button->getScreenBounds(),
                                                               nullptr);
     }
+    else if (button == recordButton.get() && acquisitionIsActive)
+    {
+        if (recordButton->getToggleState())
+            board->sendRecordOnCommand();
+        else
+            board->sendRecordOffCommand();
+    }
     else if (button == auxButton.get() && ! acquisitionIsActive)
     {
         board->enableAuxChannels (button->getToggleState());
@@ -383,7 +400,7 @@ void DeviceEditor::buttonClicked (Button* button)
 
 void DeviceEditor::startAcquisition()
 {
-    rescanButton->setEnabledState (false);
+    //rescanButton->setEnabledState (false);
     auxButton->setEnabledState (false);
     adcButton->setEnabledState (false);
     dspoffsetButton->setEnabledState (false);
@@ -406,7 +423,7 @@ void DeviceEditor::startAcquisition()
 
 void DeviceEditor::stopAcquisition()
 {
-    rescanButton->setEnabledState (true);
+    //rescanButton->setEnabledState (true);
     auxButton->setEnabledState (true);
     adcButton->setEnabledState (true);
     dspoffsetButton->setEnabledState (true);

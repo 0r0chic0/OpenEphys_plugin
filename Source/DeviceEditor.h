@@ -120,6 +120,7 @@ private:
     std::unique_ptr<AudioInterface> audioInterface;
     std::unique_ptr<ClockDivideInterface> clockInterface;
 
+    std::unique_ptr<UtilityButton> recordButton;
     std::unique_ptr<UtilityButton> rescanButton, dacTTLButton;
     std::unique_ptr<UtilityButton> auxButton;
     std::unique_ptr<UtilityButton> adcButton;

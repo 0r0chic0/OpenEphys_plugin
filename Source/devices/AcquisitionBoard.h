@@ -172,6 +172,10 @@ public:
     /** Returns the total number of channels of a given type */
     virtual int getNumDataOutputs (ContinuousChannel::Type) = 0;
 
+    virtual bool sendRecordOnCommand() { return false; }
+
+    virtual bool sendRecordOffCommand() { return false; }
+
     /** Returns total number of continuous channels */
     int getNumChannels()
     {

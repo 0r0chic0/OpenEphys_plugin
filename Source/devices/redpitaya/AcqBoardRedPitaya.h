@@ -148,7 +148,9 @@ public:
     /** Sets the number of channels to use in a headstage (no-op) */
     void setNumHeadstageChannels (int headstageIndex, int channelCount) override;
 
-private:
+    bool sendRecordOnCommand() override;
+
+    bool sendRecordOffCommand() override;
     /** Fills data buffer */
     void run();
 

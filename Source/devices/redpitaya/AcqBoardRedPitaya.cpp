@@ -180,7 +180,11 @@ bool AcqBoardRedPitaya::startAcquisition()
         commandSocket = new StreamingSocket();
 
     if (! commandSocket->connect ("rp-f0cd35.local", 5000, 1000))
+    {
+        delete commandSocket;
+        commandSocket = nullptr;
         return false;
+    }
 
     const char* msg = "START\n";
     commandSocket->write (msg, (int) strlen (msg));
@@ -203,7 +207,38 @@ bool AcqBoardRedPitaya::stopAcquisition()
     if (isThreadRunning())
         signalThreadShouldExit();
 
-    buffer->clear();
+    if (buffer != nullptr)
+        buffer->clear();
+
+    return true;
+}
+bool AcqBoardRedPitaya::sendRecordOnCommand()
+{
+    if (commandSocket == nullptr)
+        return false;
+
+    const char* msg = "RECORD ON\n";
+
+    int written = commandSocket->write (msg, (int) strlen (msg));
+
+    if (written <= 0)
+        return false;
+
+    return true;
+}
+
+bool AcqBoardRedPitaya::sendRecordOffCommand()
+{
+    if (commandSocket == nullptr)
+        return false;
+
+    const char* msg = "RECORD OFF\n";
+
+    int written = commandSocket->write (msg, (int) strlen (msg));
+
+    if (written <= 0)
+        return false;
+
     return true;
 }
 
