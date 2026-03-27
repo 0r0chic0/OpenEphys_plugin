@@ -34,7 +34,8 @@ bool AcqBoardRedPitaya::detectBoard()
     deviceFound = false;
     StreamingSocket socket;
 
-    if (! socket.connect ("rp-f0cd35.local", 5000, 500))
+    // Use a slightly larger timeout for discovery since the RP might be scanning AXI
+    if (! socket.connect ("rp-f0cd35.local", 5000, 1000))
     {
         std::cout << "connect failed" << std::endl;
         return false;
@@ -52,13 +53,39 @@ bool AcqBoardRedPitaya::detectBoard()
         return false;
     }
 
-    char buffer[16] = { 0 };
+    // Increased buffer size to catch "OK CHANNELS:XX"
+    char buffer[64] = { 0 };
     int n = socket.read (buffer, sizeof (buffer) - 1, false);
 
-    std::cout << "read bytes: " << n << std::endl;
+    if (n > 0)
+    {
+        buffer[n] = '\0';
+        String response (buffer);
+        std::cout << "Received response: " << response << std::endl;
 
-    if (n > 0 && String (buffer).trim() == "OK")
-        deviceFound = true;
+        // Check for the "OK" flag
+        if (response.contains ("OK"))
+        {
+            // Parse the channel count
+            if (response.contains ("CHANNELS:"))
+            {
+                int startIdx = response.indexOf ("CHANNELS:") + 9;
+
+                // substring(startIdx) gets everything after the colon
+                // getIntValue() stops parsing at the newline/space
+                this->numAdcChannels = response.substring (startIdx).getIntValue();
+
+                std::cout << "Detected Red Pitaya with " << numAdcChannels << " channels." << std::endl;
+                deviceFound = true;
+            }
+            else
+            {
+                // Fallback for legacy code if needed
+                this->numAdcChannels = 6;
+                deviceFound = true;
+            }
+        }
+    }
 
     socket.close();
     return deviceFound;
@@ -336,7 +363,7 @@ int AcqBoardRedPitaya::getNumDataOutputs (ContinuousChannel::Type channelType)
     if (channelType == ContinuousChannel::ADC)
     {
         if (acquireAdc)
-            return 6; // The DeviceThread assumes up to 6 ADC channels.
+            return numAdcChannels; // The DeviceThread assumes up to 6 ADC channels.
 
         return 0;
     }
@@ -366,11 +393,14 @@ void AcqBoardRedPitaya::run()
     if (totalChannels <= 0 || samplesPerBuffer <= 0)
         return;
 
-    constexpr int headerSize = 22;
-    constexpr int payloadSize = 6 * 2; // 6 int16 channels
-    constexpr int packetSize = headerSize + payloadSize;
+    const int headerSize = 22;
+    const int payloadSize = numAdcChannelsLocal * 2; // 6 int16 channels
+    const int packetSize = headerSize + payloadSize;
+    
+    constexpr int MAX_PACKET_SIZE = 1024;
 
-    uint8_t packet[packetSize];
+    uint8_t packet[MAX_PACKET_SIZE];
+    //uint8_t packet[packetSize];
 
     while (! threadShouldExit())
     {
