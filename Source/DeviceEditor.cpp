@@ -80,6 +80,7 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     }
 
     // add headstage-specific controls (currently just a toggle button)
+    /*
     for (int i = 0; i < 4; i++)
     {
         HeadstageOptionsInterface* hsOptions = new HeadstageOptionsInterface (board, this, i);
@@ -87,7 +88,8 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
         addAndMakeVisible (hsOptions);
         hsOptions->setBounds (xOffset + 3, 28 + i * 20, 70, 18);
     }
-    //add record button 
+    */
+    //add record button
     recordButton = std::make_unique<UtilityButton> ("RECORD");
     recordButton->setRadius (3.0f);
     recordButton->setBounds (xOffset + 6, 108, 65, 18);
@@ -107,16 +109,21 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     */
 
     // add sample rate selection
+    /*
     sampleRateInterface = std::make_unique<SampleRateInterface> (board, this);
     addAndMakeVisible (sampleRateInterface.get());
     sampleRateInterface->setBounds (xOffset + 80, 22, 80, 50);
+    */
 
     // add Bandwidth selection
+    /*
     bandwidthInterface = std::make_unique<BandwidthInterface> (board, this);
     addAndMakeVisible (bandwidthInterface.get());
     bandwidthInterface->setBounds (xOffset + 80, 60, 80, 45);
+    */
 
     // add AUX channel enable/disable button
+    /*
     auxButton = std::make_unique<UtilityButton> ("AUX");
     auxButton->setRadius (3.0f);
     auxButton->setBounds (xOffset + 80, 108, 32, 18);
@@ -124,8 +131,10 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     auxButton->setClickingTogglesState (true);
     auxButton->setTooltip ("Toggle AUX channels (3 per headstage)");
     addAndMakeVisible (auxButton.get());
+    */
 
     // add ADC channel enable/disable button
+    /*
     adcButton = std::make_unique<UtilityButton> ("ADC");
     adcButton->setRadius (3.0f);
     adcButton->setBounds (xOffset + 80 + 32 + 1, 108, 32, 18);
@@ -133,12 +142,15 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     adcButton->setClickingTogglesState (true);
     adcButton->setTooltip ("Toggle 8 external HDMI ADC channels");
     addAndMakeVisible (adcButton.get());
+    */
 
     // add audio output config interface
+    /*
     audioLabel = std::make_unique<Label> ("audio label", "Audio out");
     audioLabel->setBounds (xOffset + 170, 22, 75, 15);
     audioLabel->setFont (FontOptions ("Inter", "Regular", 10.0f));
     addAndMakeVisible (audioLabel.get());
+    */
 
     for (int i = 0; i < 2; i++)
     {
@@ -164,6 +176,7 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     }
 
     // add HW audio parameter selection
+    /*
     audioInterface = std::make_unique<AudioInterface> (board, this);
     addAndMakeVisible (audioInterface.get());
     audioInterface->setBounds (xOffset + 174, 55, 70, 50);
@@ -171,8 +184,10 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     clockInterface = std::make_unique<ClockDivideInterface> (board, this);
     addAndMakeVisible (clockInterface.get());
     clockInterface->setBounds (xOffset + 174, 80, 70, 50);
+    */
 
     // add DSP Offset Button
+    /*
     dspoffsetButton = std::make_unique<UtilityButton> ("DSP:");
     dspoffsetButton->setRadius (3.0f); // sets the radius of the button's corners
     dspoffsetButton->setBounds (xOffset + 174, 108, 32, 18); // sets the x position, y position, width, and height of the button
@@ -181,12 +196,16 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     dspoffsetButton->setTooltip ("Toggle DSP offset removal");
     addAndMakeVisible (dspoffsetButton.get()); // makes the button a child component of the editor and makes it visible
     dspoffsetButton->setToggleState (true, dontSendNotification);
+    */
 
     // add DSP Frequency Selection field
+    /*
     dspInterface = std::make_unique<DSPInterface> (board, this);
     addAndMakeVisible (dspInterface.get());
     dspInterface->setBounds (xOffset + 174 + 32, 108, 40, 50);
+    */
 
+    /*
     dacTTLButton = std::make_unique<UtilityButton> ("DAC TTL");
     dacTTLButton->setRadius (3.0f);
     dacTTLButton->setBounds (xOffset + 260, 25, 60, 18);
@@ -227,7 +246,9 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     }
     ttlSettleCombo->setSelectedId (1, sendNotification);
     addAndMakeVisible (ttlSettleCombo.get());
+    */
 
+    /*
     ledButton = std::make_unique<UtilityButton> ("LED");
     ledButton->setRadius (3.0f);
     ledButton->setBounds (xOffset + 288, 108, 32, 18);
@@ -236,6 +257,7 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     ledButton->setTooltip ("Toggle board LEDs");
     ledButton->setToggleState (true, dontSendNotification);
     addAndMakeVisible (ledButton.get());
+    */
 }
 
 void DeviceEditor::measureImpedances()
@@ -271,6 +293,7 @@ void DeviceEditor::updateSettings()
 
 void DeviceEditor::comboBoxChanged (ComboBox* comboBox)
 {
+    /*
     if (comboBox == ttlSettleCombo.get())
     {
         int selectedChannel = ttlSettleCombo->getSelectedId();
@@ -296,6 +319,7 @@ void DeviceEditor::comboBoxChanged (ComboBox* comboBox)
             board->setDAChpf (HPFvalues[selection - 2], true);
         }
     }
+    */
 }
 
 void DeviceEditor::channelStateChanged (Array<int> newChannels)
@@ -328,6 +352,7 @@ int DeviceEditor::getChannelCount()
 
 void DeviceEditor::buttonClicked (Button* button)
 {
+    /*
     if (button == rescanButton.get() && ! acquisitionIsActive)
     {
         board->scanPorts();
@@ -364,13 +389,15 @@ void DeviceEditor::buttonClicked (Button* button)
                                                               button->getScreenBounds(),
                                                               nullptr);
     }
-    else if (button == recordButton.get() && acquisitionIsActive)
+    */
+    if (button == recordButton.get() && acquisitionIsActive)
     {
         if (recordButton->getToggleState())
             board->sendRecordOnCommand();
         else
             board->sendRecordOffCommand();
     }
+    /*
     else if (button == auxButton.get() && ! acquisitionIsActive)
     {
         board->enableAuxChannels (button->getToggleState());
@@ -396,14 +423,15 @@ void DeviceEditor::buttonClicked (Button* button)
     {
         board->enableBoardLeds (button->getToggleState());
     }
+    */
 }
 
 void DeviceEditor::startAcquisition()
 {
     //rescanButton->setEnabledState (false);
-    auxButton->setEnabledState (false);
-    adcButton->setEnabledState (false);
-    dspoffsetButton->setEnabledState (false);
+    //auxButton->setEnabledState (false);
+    //adcButton->setEnabledState (false);
+    //dspoffsetButton->setEnabledState (false);
 
     for (auto headstageOptions : headstageOptionsInterfaces)
     {
@@ -424,9 +452,9 @@ void DeviceEditor::startAcquisition()
 void DeviceEditor::stopAcquisition()
 {
     //rescanButton->setEnabledState (true);
-    auxButton->setEnabledState (true);
-    adcButton->setEnabledState (true);
-    dspoffsetButton->setEnabledState (true);
+    //auxButton->setEnabledState (true);
+    //adcButton->setEnabledState (true);
+    //dspoffsetButton->setEnabledState (true);
 
     for (auto headstageOptions : headstageOptionsInterfaces)
     {
@@ -484,13 +512,16 @@ void DeviceEditor::saveVisualizerEditorParameters (XmlElement* xml)
         return;
     }
 
+    /*
     xml->setAttribute ("SampleRate", sampleRateInterface->getSelectedId());
     xml->setAttribute ("LowCut", bandwidthInterface->getLowerBandwidth());
     xml->setAttribute ("HighCut", bandwidthInterface->getUpperBandwidth());
     xml->setAttribute ("AUXsOn", auxButton->getToggleState());
     xml->setAttribute ("ADCsOn", adcButton->getToggleState());
+    */
     xml->setAttribute ("AudioOutputL", electrodeButtons[0]->getChannelNum());
     xml->setAttribute ("AudioOutputR", electrodeButtons[1]->getChannelNum());
+    /*
     xml->setAttribute ("NoiseSlicer", audioInterface->getNoiseSlicerLevel());
     xml->setAttribute ("TTLFastSettle", ttlSettleCombo->getSelectedId());
     xml->setAttribute ("DAC_TTL", dacTTLButton->getToggleState());
@@ -499,14 +530,20 @@ void DeviceEditor::saveVisualizerEditorParameters (XmlElement* xml)
     xml->setAttribute ("DSPCutoffFreq", dspInterface->getDspCutoffFreq());
     xml->setAttribute ("LEDs", ledButton->getToggleState());
     xml->setAttribute ("ClockDivideRatio", clockInterface->getClockDivideRatio());
+    */
 
     // loop through all headstage options interfaces and save their parameters
     for (int i = 0; i < 4; i++)
     {
         XmlElement* hsOptions = xml->createNewChildElement ("HSOPTIONS");
         hsOptions->setAttribute ("index", i);
-        hsOptions->setAttribute ("hs1_full_channels", headstageOptionsInterfaces[i]->is32Channel (0));
-        hsOptions->setAttribute ("hs2_full_channels", headstageOptionsInterfaces[i]->is32Channel (1));
+        // Note: Make sure headstageOptionsInterfaces vector was properly populated if you intend to save this.
+        // If you commented out their creation, this might also cause an issue or just save nothing.
+        if (headstageOptionsInterfaces.size() > i && headstageOptionsInterfaces[i] != nullptr)
+        {
+            hsOptions->setAttribute ("hs1_full_channels", headstageOptionsInterfaces[i]->is32Channel (0));
+            hsOptions->setAttribute ("hs2_full_channels", headstageOptionsInterfaces[i]->is32Channel (1));
+        }
     }
 
     // save channel naming scheme
@@ -548,6 +585,7 @@ void DeviceEditor::loadVisualizerEditorParameters (XmlElement* xml)
         return;
     }
 
+    /*
     int sampleRateId = xml->getIntAttribute ("SampleRate");
     Array<int> sampleRates = board->getAvailableSampleRates();
     if (! sampleRates.contains (sampleRateId))
@@ -568,6 +606,7 @@ void DeviceEditor::loadVisualizerEditorParameters (XmlElement* xml)
     dspInterface->setDspCutoffFreq (xml->getDoubleAttribute ("DSPCutoffFreq"));
     ledButton->setToggleState (xml->getBoolAttribute ("LEDs", true), sendNotification);
     clockInterface->setClockDivideRatio (xml->getIntAttribute ("ClockDivideRatio"));
+    */
 
     int AudioOutputL = xml->getIntAttribute ("AudioOutputL", -1);
     int AudioOutputR = xml->getIntAttribute ("AudioOutputR", -1);
@@ -586,7 +625,7 @@ void DeviceEditor::loadVisualizerEditorParameters (XmlElement* xml)
     {
         int index = hsOptions->getIntAttribute ("index", -1);
 
-        if (index > -1)
+        if (index > -1 && headstageOptionsInterfaces.size() > index && headstageOptionsInterfaces[index] != nullptr)
         {
             headstageOptionsInterfaces[index]->set32Channel (0, hsOptions->getBoolAttribute ("hs1_full_channels", true));
             headstageOptionsInterfaces[index]->set32Channel (1, hsOptions->getBoolAttribute ("hs2_full_channels", true));

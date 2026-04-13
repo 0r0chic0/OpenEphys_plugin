@@ -384,44 +384,74 @@ void AcqBoardRedPitaya::run()
     const int64 samplesPerBuffer = int64 (settings.boardSampleRate / 1000.0);
     uint64 eventCode = 0;
 
-    const int numHeadstageChannels = getNumDataOutputs (ContinuousChannel::ELECTRODE);
-    const int numAuxChannels = getNumDataOutputs (ContinuousChannel::AUX);
     const int numAdcChannelsLocal = getNumDataOutputs (ContinuousChannel::ADC);
 
-    const int totalChannels = numHeadstageChannels + numAuxChannels + numAdcChannelsLocal;
-
-    if (totalChannels <= 0 || samplesPerBuffer <= 0)
+    if (numAdcChannelsLocal <= 0 || samplesPerBuffer <= 0)
         return;
 
     const int headerSize = 22;
-    const int payloadSize = numAdcChannelsLocal * 2; // 6 int16 channels
+    const int payloadSize = numAdcChannelsLocal * 2;
     const int packetSize = headerSize + payloadSize;
-    
-    constexpr int MAX_PACKET_SIZE = 1024;
 
+    constexpr int MAX_PACKET_SIZE = 1024;
     uint8_t packet[MAX_PACKET_SIZE];
-    //uint8_t packet[packetSize];
+
+    bool synchronized = false;
+    uint8_t syncBuffer[headerSize];
+    int bytesSearched = 0;
+
+    while (! synchronized && ! threadShouldExit())
+    {
+        int n = commandSocket->read (syncBuffer + bytesSearched, 1, true);
+        if (n <= 0)
+            return;
+        bytesSearched++;
+
+        if (bytesSearched == headerSize)
+        {
+            if (syncBuffer[8] == 0x03 && syncBuffer[9] == 0x00)
+            {
+                memcpy (packet, syncBuffer, headerSize);
+
+                int pRead = 0;
+                while (pRead < payloadSize && ! threadShouldExit())
+                {
+                    int pn = commandSocket->read (packet + headerSize + pRead, payloadSize - pRead, true);
+                    if (pn <= 0)
+                        return;
+                    pRead += pn;
+                }
+                synchronized = true;
+            }
+            else
+            {
+                memmove (syncBuffer, syncBuffer + 1, headerSize - 1);
+                bytesSearched--;
+            }
+        }
+    }
 
     while (! threadShouldExit())
     {
         for (int sampleIndex = 0; sampleIndex < samplesPerBuffer; ++sampleIndex)
         {
-            int bytesRead = 0;
-
-            while (bytesRead < packetSize && ! threadShouldExit())
+            if (sampleIndex > 0 || ! synchronized)
             {
-                const int n = commandSocket->read (packet + bytesRead, packetSize - bytesRead, true);
-
-                if (n <= 0)
-                    return;
-
-                bytesRead += n;
+                int bytesRead = 0;
+                while (bytesRead < packetSize && ! threadShouldExit())
+                {
+                    const int n = commandSocket->read (packet + bytesRead, packetSize - bytesRead, true);
+                    if (n <= 0)
+                        return;
+                    bytesRead += n;
+                }
             }
+
+            synchronized = false;
 
             const int16_t* channels = reinterpret_cast<const int16_t*> (packet + headerSize);
 
             int ch = 0;
-
             for (int adc = 0; adc < numAdcChannelsLocal; ++adc)
             {
                 samples[(ch * samplesPerBuffer) + sampleIndex] = float (channels[adc]);
@@ -429,7 +459,6 @@ void AcqBoardRedPitaya::run()
             }
 
             const double timeSeconds = double (sampleNumber) / double (settings.boardSampleRate);
-
             sampleNumbers[sampleIndex] = sampleNumber;
             timestamps[sampleIndex] = timeSeconds;
             event_codes[sampleIndex] = eventCode;
