@@ -176,6 +176,8 @@ public:
 
     virtual bool sendRecordOffCommand() { return false; }
 
+    virtual void updateSampleFrequency (int newFreq) {}
+
     /** Returns total number of continuous channels */
     int getNumChannels()
     {

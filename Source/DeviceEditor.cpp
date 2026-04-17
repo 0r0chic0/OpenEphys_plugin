@@ -98,6 +98,22 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     recordButton->setTooltip ("Record streaming data");
     addAndMakeVisible (recordButton.get());
 
+    // --- Add Sample Rate Title ---
+    sampleRateTitle = std::make_unique<Label> ("sampleRateTitle", "Sample Rate (Hz)");
+    sampleRateTitle->setFont (FontOptions ("Inter", "Regular", 10.0f));
+    sampleRateTitle->setBounds (xOffset + 80, 22, 100, 15);
+    addAndMakeVisible (sampleRateTitle.get());
+
+    // --- Add Editable Sample Rate Input Box ---
+    sampleRateLabel = std::make_unique<Label> ("sampleRateLabel", "1000");
+    sampleRateLabel->setEditable (true); // This enables text input
+    sampleRateLabel->setColour (Label::backgroundColourId, Colours::black);
+    sampleRateLabel->setColour (Label::textColourId, Colours::white);
+    sampleRateLabel->setBounds (xOffset + 80, 38, 60, 18);
+    sampleRateLabel->addListener (this); // Catches the 'Enter' key
+    sampleRateLabel->setTooltip ("Set streaming frequency (100 - 2000 Hz)");
+    addAndMakeVisible (sampleRateLabel.get());
+
     // add rescan button
     /*
     rescanButton = std::make_unique<UtilityButton> ("RESCAN");
@@ -152,6 +168,7 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
     addAndMakeVisible (audioLabel.get());
     */
 
+    /*
     for (int i = 0; i < 2; i++)
     {
         ElectrodeButton* button = new ElectrodeButton (-1);
@@ -174,6 +191,7 @@ DeviceEditor::DeviceEditor (GenericProcessor* parentNode,
             button->setTooltip ("Audio monitor right channel");
         }
     }
+    */
 
     // add HW audio parameter selection
     /*
@@ -472,6 +490,22 @@ void DeviceEditor::stopAcquisition()
     acquisitionIsActive = false;
 }
 
+// --- ADD THIS METHOD TO HANDLE YOUR NEW TEXT BOX ---
+void DeviceEditor::labelTextChanged (Label* labelThatHasChanged)
+{
+    if (labelThatHasChanged == sampleRateLabel.get())
+    {
+        int newFreq = sampleRateLabel->getText().getIntValue();
+
+        if (board != nullptr)
+        {
+            // Send the command to the Red Pitaya!
+            std::cout << "DeviceEditor: Board found. Dispatching updateSampleFrequency..." << std::endl;
+            board->updateSampleFrequency (newFreq);
+        }
+    }
+}
+
 void DeviceEditor::saveVisualizerEditorParameters (XmlElement* xml)
 {
     if (board == nullptr)
@@ -519,8 +553,8 @@ void DeviceEditor::saveVisualizerEditorParameters (XmlElement* xml)
     xml->setAttribute ("AUXsOn", auxButton->getToggleState());
     xml->setAttribute ("ADCsOn", adcButton->getToggleState());
     */
-    xml->setAttribute ("AudioOutputL", electrodeButtons[0]->getChannelNum());
-    xml->setAttribute ("AudioOutputR", electrodeButtons[1]->getChannelNum());
+    //xml->setAttribute ("AudioOutputL", electrodeButtons[0]->getChannelNum());
+    //xml->setAttribute ("AudioOutputR", electrodeButtons[1]->getChannelNum());
     /*
     xml->setAttribute ("NoiseSlicer", audioInterface->getNoiseSlicerLevel());
     xml->setAttribute ("TTLFastSettle", ttlSettleCombo->getSelectedId());

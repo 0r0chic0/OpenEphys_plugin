@@ -269,6 +269,36 @@ bool AcqBoardRedPitaya::sendRecordOffCommand()
     return true;
 }
 
+void AcqBoardRedPitaya::updateSampleFrequency(int newFreq)
+{
+    if (! deviceFound)
+        return ;
+
+    if (commandSocket == nullptr)
+        commandSocket = new StreamingSocket();
+
+    if (! commandSocket->connect ("rp-f0cd35.local", 5000, 1000))
+    {
+        delete commandSocket;
+        commandSocket = nullptr;
+        return ;
+    }
+   
+    char msg[32];
+    snprintf (msg, sizeof (msg), "FREQ:%d\n", newFreq);
+
+    int written = commandSocket->write (msg, (int) strlen (msg));
+
+    if (written > 0)
+    {
+        std::cout << "Red Pitaya: Sent command -> " << msg << std::endl;
+    }
+    else
+    {
+        std::cout << "Red Pitaya Backend ERROR: Socket write failed." << std::endl;
+    }
+}
+
 double AcqBoardRedPitaya::setUpperBandwidth (double upperBandwidth)
 {
     upperBandwidthHz = upperBandwidth;

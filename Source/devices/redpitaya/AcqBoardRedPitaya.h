@@ -151,6 +151,9 @@ public:
     bool sendRecordOnCommand() override;
 
     bool sendRecordOffCommand() override;
+
+    void updateSampleFrequency (int newFreq) override;
+
     /** Fills data buffer */
     void run();
 

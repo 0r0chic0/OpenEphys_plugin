@@ -41,7 +41,8 @@ struct ImpedanceData;
 class DeviceEditor : public VisualizerEditor,
                      public ComboBox::Listener,
                      public Button::Listener,
-                     public PopupChannelSelector::Listener
+                     public PopupChannelSelector::Listener, 
+                     public Label::Listener
 
 {
 public:
@@ -98,6 +99,8 @@ public:
             memoryUsage->setPercentMemoryUsed (memoryUsed);
     }
 
+    void labelTextChanged (Label* labelThatHasChanged) override;
+
 private:
     /** Pointer to acquisition board device */
     class AcquisitionBoard* board;
@@ -130,6 +133,9 @@ private:
     std::unique_ptr<ComboBox> ttlSettleCombo, dacHPFcombo;
     std::unique_ptr<Label> audioLabel, ttlSettleLabel, dacHPFlabel;
     std::unique_ptr<Label> noBoardsDetectedLabel;
+
+    std::unique_ptr<Label> sampleRateTitle;
+    std::unique_ptr<Label> sampleRateLabel;
 
     enum AudioChannel
     {
