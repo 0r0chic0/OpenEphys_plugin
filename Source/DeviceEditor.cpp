@@ -514,7 +514,7 @@ void DeviceEditor::saveVisualizerEditorParameters (XmlElement* xml)
         {
             return;
         }
-
+        /*
         xml->setAttribute ("SampleRate", previousSettings->getIntAttribute ("SampleRate"));
         xml->setAttribute ("LowCut", previousSettings->getDoubleAttribute ("LowCut"));
         xml->setAttribute ("HighCut", previousSettings->getDoubleAttribute ("HighCut"));
@@ -542,7 +542,7 @@ void DeviceEditor::saveVisualizerEditorParameters (XmlElement* xml)
             newHsOptions->setAttribute ("hs1_full_channels", hsOptions->getBoolAttribute ("hs1_full_channels", true));
             newHsOptions->setAttribute ("hs2_full_channels", hsOptions->getBoolAttribute ("hs2_full_channels", true));
         }
-
+        */
         return;
     }
 
@@ -567,6 +567,8 @@ void DeviceEditor::saveVisualizerEditorParameters (XmlElement* xml)
     */
 
     // loop through all headstage options interfaces and save their parameters
+
+    /*
     for (int i = 0; i < 4; i++)
     {
         XmlElement* hsOptions = xml->createNewChildElement ("HSOPTIONS");
@@ -579,16 +581,18 @@ void DeviceEditor::saveVisualizerEditorParameters (XmlElement* xml)
             hsOptions->setAttribute ("hs2_full_channels", headstageOptionsInterfaces[i]->is32Channel (1));
         }
     }
-
+    */
     // save channel naming scheme
-    xml->setAttribute ("Channel_Naming_Scheme", board->getNamingScheme());
+    //xml->setAttribute ("Channel_Naming_Scheme", board->getNamingScheme());
 }
 
 void DeviceEditor::loadVisualizerEditorParameters (XmlElement* xml)
 {
     if (board == nullptr)
     {
+        
         previousSettings = std::make_unique<XmlElement> ("DeviceEditorSettings");
+        /*
         previousSettings->setAttribute ("SampleRate", xml->getIntAttribute ("SampleRate"));
         previousSettings->setAttribute ("LowCut", xml->getDoubleAttribute ("LowCut"));
         previousSettings->setAttribute ("HighCut", xml->getDoubleAttribute ("HighCut"));
@@ -615,7 +619,7 @@ void DeviceEditor::loadVisualizerEditorParameters (XmlElement* xml)
             newHsOptions->setAttribute ("hs1_full_channels", hsOptions->getBoolAttribute ("hs1_full_channels", true));
             newHsOptions->setAttribute ("hs2_full_channels", hsOptions->getBoolAttribute ("hs2_full_channels", true));
         }
-
+        */
         return;
     }
 
@@ -642,6 +646,7 @@ void DeviceEditor::loadVisualizerEditorParameters (XmlElement* xml)
     clockInterface->setClockDivideRatio (xml->getIntAttribute ("ClockDivideRatio"));
     */
 
+    /*
     int AudioOutputL = xml->getIntAttribute ("AudioOutputL", -1);
     int AudioOutputR = xml->getIntAttribute ("AudioOutputR", -1);
 
@@ -668,6 +673,8 @@ void DeviceEditor::loadVisualizerEditorParameters (XmlElement* xml)
 
     // load channel naming scheme
     board->setNamingScheme ((ChannelNamingScheme) xml->getIntAttribute ("Channel_Naming_Scheme", 0));
+    */
+    return;
 }
 
 Visualizer* DeviceEditor::createNewCanvas()

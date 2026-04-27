@@ -26,7 +26,7 @@ AcqBoardRedPitaya::~AcqBoardRedPitaya()
 {
     stopAcquisition();
 }
-
+/*
 bool AcqBoardRedPitaya::detectBoard()
 {
     std::cout << "detectBoard called" << std::endl;
@@ -88,6 +88,84 @@ bool AcqBoardRedPitaya::detectBoard()
     }
 
     socket.close();
+    return deviceFound;
+} */
+
+bool AcqBoardRedPitaya::detectBoard()
+{
+    std::cout << "detectBoard called" << std::endl;
+
+    deviceFound = false;
+
+    if (commandSocket != nullptr && ! commandSocket->isConnected())
+    {
+        delete commandSocket;
+        commandSocket = nullptr;
+    }
+
+    if (commandSocket == nullptr)
+        commandSocket = new StreamingSocket();
+
+    if (! commandSocket->connect ("rp-f0cd35.local", 5000, 1000))
+    {
+        std::cout << "connect failed" << std::endl;
+        delete commandSocket;
+        commandSocket = nullptr;
+        return false;
+    }
+
+    std::cout << "connected" << std::endl;
+
+    const char* msg = "REDPITAYA\n";
+    commandSocket->write (msg, (int) strlen (msg));
+
+    if (! commandSocket->waitUntilReady (true, 500))
+    {
+        std::cout << "no reply" << std::endl;
+        commandSocket->close();
+        delete commandSocket;
+        commandSocket = nullptr;
+        return false;
+    }
+
+    // Increased buffer size to catch "OK CHANNELS:XX"
+    char buffer[64] = { 0 };
+    int n = commandSocket->read (buffer, sizeof (buffer) - 1, false);
+
+    if (n > 0)
+    {
+        buffer[n] = '\0';
+        String response (buffer);
+        std::cout << "Received response: " << response << std::endl;
+
+        // Check for the "OK" flag
+        if (response.contains ("OK"))
+        {
+            // Parse the channel count
+            if (response.contains ("CHANNELS:"))
+            {
+                int startIdx = response.indexOf ("CHANNELS:") + 9;
+
+                this->numAdcChannels = response.substring (startIdx).getIntValue();
+
+                std::cout << "Detected Red Pitaya with " << numAdcChannels << " channels." << std::endl;
+                deviceFound = true;
+            }
+            else
+            {
+                // Fallback for legacy code if needed
+                this->numAdcChannels = 6;
+                deviceFound = true;
+            }
+        }
+    }
+    if (! deviceFound)
+    {
+        commandSocket->close();
+        delete commandSocket;
+        commandSocket = nullptr;
+    }
+
     return deviceFound;
 }
 
@@ -203,14 +281,23 @@ bool AcqBoardRedPitaya::startAcquisition()
     if (! deviceFound)
         return false;
 
-    if (commandSocket == nullptr)
-        commandSocket = new StreamingSocket();
-
-    if (! commandSocket->connect ("rp-f0cd35.local", 5000, 1000))
+    if (commandSocket != nullptr && ! commandSocket->isConnected())
     {
+        commandSocket->close();
         delete commandSocket;
         commandSocket = nullptr;
-        return false;
+    }
+
+    if (commandSocket == nullptr)
+    {
+        commandSocket = new StreamingSocket();
+        if (! commandSocket->connect ("rp-f0cd35.local", 5000, 1000))
+        {
+            std::cout << "Red Pitaya ERROR: Could not connect to board." << std::endl;
+            delete commandSocket;
+            commandSocket = nullptr;
+            return false;
+        }
     }
 
     const char* msg = "START\n";
@@ -222,10 +309,14 @@ bool AcqBoardRedPitaya::startAcquisition()
 
 bool AcqBoardRedPitaya::stopAcquisition()
 {
+    /*
     if (commandSocket != nullptr)
     {
         const char* msg = "STOP\n";
         commandSocket->write (msg, (int) strlen (msg));
+
+        commandSocket->waitUntilReady (true, 100);
+
         commandSocket->close();
         delete commandSocket;
         commandSocket = nullptr;
@@ -237,7 +328,37 @@ bool AcqBoardRedPitaya::stopAcquisition()
     if (buffer != nullptr)
         buffer->clear();
 
-    return true;
+    return true; */
+        if (commandSocket != nullptr && commandSocket->isConnected())
+        {
+            // 1. Send the STOP command to the Red Pitaya
+            const char* msg = "STOP\n";
+            commandSocket->write (msg, (int) strlen (msg));
+
+            // 2. Wait 50ms for the board to exit run_stream and the final packets to arrive
+            juce::Thread::sleep (50);
+
+            char trash[1024];
+            int flushCount = 0;
+            while (commandSocket->waitUntilReady (true, 0) == 1 && flushCount < 100)
+            {
+                commandSocket->read (trash, sizeof (trash), false);
+                flushCount++;
+            }
+
+            if (flushCount > 0)
+            {
+                std::cout << "Cleared " << flushCount << " leftover packets during stop." << std::endl;
+            }
+        }
+
+        if (isThreadRunning())
+            signalThreadShouldExit();
+
+        if (buffer != nullptr)
+            buffer->clear();
+
+        return true;
 }
 bool AcqBoardRedPitaya::sendRecordOnCommand()
 {
@@ -269,21 +390,35 @@ bool AcqBoardRedPitaya::sendRecordOffCommand()
     return true;
 }
 
-void AcqBoardRedPitaya::updateSampleFrequency(int newFreq)
+void AcqBoardRedPitaya::updateSampleFrequency (int newFreq)
 {
     if (! deviceFound)
-        return ;
+        return;
 
-    if (commandSocket == nullptr)
-        commandSocket = new StreamingSocket();
-
-    if (! commandSocket->connect ("rp-f0cd35.local", 5000, 1000))
+    // 1. SELF-HEALING: Trash dead sockets
+    if (commandSocket != nullptr && ! commandSocket->isConnected())
     {
+        commandSocket->close();
         delete commandSocket;
         commandSocket = nullptr;
-        return ;
     }
-   
+
+    // 2. SELF-HEALING: Build a new connection if needed
+    if (commandSocket == nullptr)
+    {
+        commandSocket = new StreamingSocket();
+
+        // Connect (consider swapping to direct IP like "192.168.x.x" if mDNS lags)
+        if (! commandSocket->connect ("rp-f0cd35.local", 5000, 1000))
+        {
+            std::cout << "Red Pitaya ERROR: Could not connect to board." << std::endl;
+            delete commandSocket;
+            commandSocket = nullptr;
+            return;
+        }
+    }
+
+    // 3. FIRE AND FORGET
     char msg[32];
     snprintf (msg, sizeof (msg), "FREQ:%d\n", newFreq);
 
@@ -291,11 +426,12 @@ void AcqBoardRedPitaya::updateSampleFrequency(int newFreq)
 
     if (written > 0)
     {
-        std::cout << "Red Pitaya: Sent command -> " << msg << std::endl;
+        std::cout << "Red Pitaya: Sent command -> " << msg;
     }
     else
     {
         std::cout << "Red Pitaya Backend ERROR: Socket write failed." << std::endl;
+        commandSocket->close();
     }
 }
 
