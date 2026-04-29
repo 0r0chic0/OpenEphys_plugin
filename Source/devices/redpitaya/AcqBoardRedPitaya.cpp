@@ -336,6 +336,7 @@ bool AcqBoardRedPitaya::stopAcquisition()
             commandSocket->write (msg, (int) strlen (msg));
 
             // 2. Wait 50ms for the board to exit run_stream and the final packets to arrive
+            /*
             juce::Thread::sleep (50);
 
             char trash[1024];
@@ -349,7 +350,7 @@ bool AcqBoardRedPitaya::stopAcquisition()
             if (flushCount > 0)
             {
                 std::cout << "Cleared " << flushCount << " leftover packets during stop." << std::endl;
-            }
+            }*/
         }
 
         if (isThreadRunning())
@@ -675,8 +676,11 @@ void AcqBoardRedPitaya::run()
 
     while (! threadShouldExit())
     {
+        if (! udpSocket.waitUntilReady (true, 100))
+            continue;
+
         // Block until a full chunk arrives
-        int n = udpSocket.read ((char*) chunkBuffer, chunkSize, true);
+        int n = udpSocket.read ((char*) chunkBuffer, chunkSize, false);
         if (n <= 0)
             return;
 
