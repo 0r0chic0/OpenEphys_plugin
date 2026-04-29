@@ -427,6 +427,7 @@ void AcqBoardRedPitaya::updateSampleFrequency (int newFreq)
     if (written > 0)
     {
         std::cout << "Red Pitaya: Sent command -> " << msg;
+        settings.boardSampleRate = static_cast<float> (newFreq);
     }
     else
     {
@@ -541,6 +542,7 @@ void AcqBoardRedPitaya::setNumHeadstageChannels (int /*headstageIndex*/, int /*c
 {
 }
 
+/*
 void AcqBoardRedPitaya::run()
 {
     if (commandSocket == nullptr)
@@ -565,13 +567,13 @@ void AcqBoardRedPitaya::run()
     bool synchronized = false;
     uint8_t syncBuffer[headerSize];
     int bytesSearched = 0;
-
+    
     while (! synchronized && ! threadShouldExit())
     {
-        int n = commandSocket->read (syncBuffer + bytesSearched, 1, true);
+        int n = commandSocket->read (syncBuffer + bytesSearched, headerSize - bytesSearched, true);
         if (n <= 0)
             return;
-        bytesSearched++;
+        bytesSearched += n;
 
         if (bytesSearched == headerSize)
         {
@@ -606,9 +608,10 @@ void AcqBoardRedPitaya::run()
                 int bytesRead = 0;
                 while (bytesRead < packetSize && ! threadShouldExit())
                 {
-                    const int n = commandSocket->read (packet + bytesRead, packetSize - bytesRead, true);
+                    const int n = commandSocket->read (packet + bytesRead, packetSize - bytesRead, true ); 
                     if (n <= 0)
                         return;
+
                     bytesRead += n;
                 }
             }
@@ -637,5 +640,74 @@ void AcqBoardRedPitaya::run()
                              timestamps,
                              event_codes,
                              (int) samplesPerBuffer);
+    }
+} */
+void AcqBoardRedPitaya::run()
+{
+    if (commandSocket == nullptr)
+        return;
+
+    // --- UDP receive socket ---
+    DatagramSocket udpSocket;
+    if (! udpSocket.bindToPort (55001))
+    {
+        std::cout << "Failed to bind UDP socket on port 5001" << std::endl;
+        return;
+    }
+    // -------------------------
+
+    int64 sampleNumber = 0;
+    const int64 samplesPerBuffer = int64 (settings.boardSampleRate / 1000.0);
+    uint64 eventCode = 0;
+    const int numAdcChannelsLocal = getNumDataOutputs (ContinuousChannel::ADC);
+    if (numAdcChannelsLocal <= 0 || samplesPerBuffer <= 0)
+        return;
+
+    const int headerSize = 22;
+    const int payloadSize = numAdcChannelsLocal * 2;
+    const int packetSize = headerSize + payloadSize;
+    constexpr int MAX_UDP_CHUNK = 65507; // max UDP payload
+    uint8_t chunkBuffer[MAX_UDP_CHUNK];
+
+    // How many packets arrive per UDP chunk (must match server's CHUNK_SAMPLES)
+    const int packetsPerChunk = 100; // match CHUNK_SAMPLES on server
+    const int chunkSize = packetSize * packetsPerChunk;
+
+    while (! threadShouldExit())
+    {
+        // Block until a full chunk arrives
+        int n = udpSocket.read ((char*) chunkBuffer, chunkSize, true);
+        if (n <= 0)
+            return;
+
+        // Process each packet in the chunk
+        int numPackets = n / packetSize;
+        for (int p = 0; p < numPackets; ++p)
+        {
+            uint8_t* packet = chunkBuffer + (p * packetSize);
+            const int16_t* channels = reinterpret_cast<const int16_t*> (packet + headerSize);
+
+            int sampleIndex = p % samplesPerBuffer;
+            int ch = 0;
+            for (int adc = 0; adc < numAdcChannelsLocal; ++adc)
+            {
+                samples[(ch * samplesPerBuffer) + sampleIndex] = float (channels[adc]);
+                ++ch;
+            }
+            const double timeSeconds = double (sampleNumber) / double (settings.boardSampleRate);
+            sampleNumbers[sampleIndex] = sampleNumber;
+            timestamps[sampleIndex] = timeSeconds;
+            event_codes[sampleIndex] = eventCode;
+            ++sampleNumber;
+
+            if (sampleIndex == samplesPerBuffer - 1)
+            {
+                buffer->addToBuffer (samples,
+                                     sampleNumbers,
+                                     timestamps,
+                                     event_codes,
+                                     (int) samplesPerBuffer);
+            }
+        }
     }
 }
